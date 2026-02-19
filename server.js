@@ -9,6 +9,7 @@ app.use(express.json());
 
 startCleanup();
 
+// ===== CLIENTE =====
 app.get("/api/inbox", (req, res) => {
   const email = (req.query.email || "").toString().trim().toLowerCase();
   if (!email) return res.status(400).json({ error: "Email requerido" });
@@ -23,6 +24,9 @@ app.get("/api/inbox", (req, res) => {
   res.json({ message: message || null });
 });
 
+// ===== ADMIN =====
+
+// Listar asuntos
 app.get("/api/admin/subjects", (req, res) => {
   const rows = db.prepare(`
     SELECT id, subject_pattern, match_type, enabled, created_at
@@ -32,6 +36,20 @@ app.get("/api/admin/subjects", (req, res) => {
   res.json(rows);
 });
 
+// ✅ Agregar asunto (ESTO TE FALTABA)
+app.post("/api/admin/subjects", (req, res) => {
+  const { subject_pattern, match_type = "CONTAINS" } = req.body || {};
+  if (!subject_pattern) return res.status(400).json({ error: "subject_pattern requerido" });
+
+  db.prepare(`
+    INSERT INTO allowed_subjects (subject_pattern, match_type, enabled)
+    VALUES (?, ?, 1)
+  `).run(subject_pattern, match_type);
+
+  res.json({ ok: true });
+});
+
+// Login
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body || {};
   const user = db.prepare(`
